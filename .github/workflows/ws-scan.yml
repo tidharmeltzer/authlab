@@ -1,0 +1,56 @@
+name: ws-scan
+
+on:
+  push:
+    branches: [ main ]
+
+  workflow_dispatch:
+    # inputs:
+    #   name:
+    #     # Friendly description to be shown in the UI instead of 'name'
+    #     description: 'Person to greet'
+    #     # Default value if no value is explicitly provided
+    #     default: 'World'
+    #     # Input has to be provided for the workflow to run
+    #     required: true
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        distribution: 'adopt'
+    # Build project
+    - name: Build with PKG_MGR
+      run: echo replace this with build command
+    # WhiteSource Scan
+    - name: WhiteSource Unified Agent Download
+    - run: curl -LJO https://unified-agent.s3.amazonaws.com/wss-unified-agent.jar
+    - name: WhiteSource Unified Agent Scan
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        WS_APIKEY: ${{secrets.WSAPIKEY}}
+        WS_USERKEY: ${{secrets.WSUSERKEY}}
+        WS_WSS_URL: https://saas-eu.whitesourcesoftware.com/agent
+        WS_PRODUCTNAME: ${{github.event.repository.name}}
+        WS_PROJECTNAME: ${{github.ref}}
+        WS_GENERATEPROJECTDETAILSJSON: true
+        WS_SCANCOMMENT: "[GitHub.tidharmeltzer] ${{github.ref}}"
+        # Prioritize
+        # WS_FILESYSTEMSCAN: false
+        # WS_RESOLVEALLDEPENDENCIES: false
+        # WS_XXXXX_RESOLVEDEPENDENCIES: true
+        # WS_ENABLEIMPACTANALYSIS: true
+      # SCA Scan
+      run: |
+        java -jar wss-unified-agent.jar
+      # Prioritize Scan
+      run: |
+        APPPATH=$(find ./build/libs -type f -wholename "*.war")
+        java -jar wss-unified-agent.jar -appPath $APPPATH -d ./
